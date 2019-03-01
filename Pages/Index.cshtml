@@ -1,0 +1,66 @@
+﻿@page
+@using DotnetBunnyLogBrowser
+@using DotnetBunnyLogBrowser.Pages
+@model IndexModel
+@{
+    ViewData["Title"] = ".NET Bunny: Log Browser";
+}
+
+@using( BunnyJobList currentJobs = new BunnyJobList(Model.GetJobs()) )
+{
+    <div class="main container-fluid">
+        <div class="row bg-dark text-left">
+            <div class="col-2">
+                <div class="list-group text-primary bg-dark" id="list-tests" role="tablist">
+                    @foreach( BunnyJob job in currentJobs )
+                    {
+                        <a class="list-group-item list-group-item-action text-nowrap" id="index-@job.Name" data-toggle="list" href="#@job.Name" role="tab" aria-controls="@job.Name">@job.DisplayName</a>
+                    }
+                </div>
+            </div>
+            <div class="col-1">
+                <div class="list-group" id="list-results" role="tablist">
+                    @foreach( BunnyJob job in currentJobs )
+                    {
+                        <span class="list-group-item text-nowrap text-@(job.Passed ? "pass" : "fail")">@(job.Passed ? "PASS" : "FAIL")</span>
+                    }
+                </div>
+            </div>
+            <div class="col-9">
+                <div class="tab-content bg-dark text-white" id="nav-tabContent">
+                    @foreach( BunnyJob job in currentJobs )
+                    {
+                        <div class="tab-pane fade tests" id="@job.Name" role="tabpanel" aria-labelledby="index-@job.Name">
+                            @if( job.FailedTests != null )
+                            {
+                                <div class="row">
+                                    <div class="col-xl-2 col-lg-3">
+                                        Failed tests:
+                                        <div class="list-group bg-dark" id="list-failures" role="tablist">
+                                            @foreach( BunnyTest test in job.FailedTests )
+                                            {
+                                                <a class="list-group-item list-group-item-action text-nowrap" id="index-@test.Name" data-toggle="list" href="#@test.Name" role="tab" aria-controls="@test.Name">@test.DisplayName</a>
+                                            }
+                                        </div>
+                                    </div>
+                                    <div class="col-xl-10 col-lg-9">
+                                        <div class="tab-content bg-dark text-white" id="list-logs" role="tablist">
+                                            @foreach( BunnyTest test in job.FailedTests )
+                                            {
+                                                <div class="tab-pane fade log" id="@test.Name" role="tabpanel" aria-labelledby="index-@test.Name">@test.Log</div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <span>No failed tests.</span>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}

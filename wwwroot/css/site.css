@@ -1,0 +1,37 @@
+﻿div, span, .list-group-item, .list-group-item-action, .active{
+  background-color: #343a40 !important;
+  border-color: #343a40 !important;
+  color: #ffffff !important;
+}
+
+.main{
+  text-align: center;
+}
+
+.text-pass {
+  color: #00aa00 !important;
+}
+
+.text-fail {
+  color: #aa0000 !important;
+}
+
+.text-primary, .active{
+  color: #d00d93 !important;
+}
+
+a.text-primary:hover, a.text-primary:focus {
+  color: #ff55aa !important;
+  text-decoration: none;
+}
+
+.log{
+  text-align: left;
+  vertical-align: top;
+  white-space: pre-line;
+  color: #ffffff !important;
+}
+
+.tests{
+  padding-top: 0.9em;
+}
