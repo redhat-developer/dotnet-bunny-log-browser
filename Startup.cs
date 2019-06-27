@@ -17,6 +17,7 @@ namespace DotnetBunnyLogBrowser
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
+            JobsConfig.Create("jobs.config");
         }
 
         public IConfiguration Configuration { get; }
