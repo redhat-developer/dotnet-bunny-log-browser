@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore;
@@ -19,6 +20,8 @@ namespace DotnetBunnyLogBrowser
 
         public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
-                .UseStartup<Startup>();
+                .UseKestrel(options => {
+                    options.Listen(IPAddress.Loopback, 5080); //HTTP port
+                }).UseStartup<Startup>();
     }
 }
