@@ -4,6 +4,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.IO;
+using System.Text;
+
 
 namespace DotnetBunnyLogBrowser.Pages
 {
@@ -34,14 +37,41 @@ namespace DotnetBunnyLogBrowser.Pages
 
 		public List<BunnyJob> GetJobs()
 		{
-			//TODO...
+			string jobs_directory="/home/rblazek/Documents/dotnet-bunny-log-browser/TestData/" /*"http://hydra.brq.redhat.com:8080/view/"*/;
+			var job_names=Directory.GetDirectories(jobs_directory, "dotnet-rpm*");
+			var jobs=new List<BunnyJob>(job_names.Length);
 
-			return new List<BunnyJob>(){
-				new BunnyJob("dotnet-rpm-rhel7-x64-1.0", true),
-				new BunnyJob("dotnet-rpm-rhel7-x64-1.1", true),
-				new BunnyJob("dotnet-rpm-rhel7-x64-2.1", false, new List<BunnyTest>(){new BunnyTest("createdump-aspnet", GetExampleLog()), new BunnyTest("bash-completion", "Bash completion is bork and this is the example log.")}),
-				new BunnyJob("dotnet-rpm-rhel7-x64-2.2", true)
-			};
+			for(int i=0; i<job_names.Length; ++i)
+			{
+				job_names[i]=job_names[i].Substring(job_names[i].LastIndexOf('/')+1);
+				var logfile=System.IO.File.ReadAllText(jobs_directory+job_names[i]+"/ws/results/logfile.log", Encoding.UTF8);
+				var errors=new List<int>(){0};
+				while(errors.Last()!=-1)
+				{
+					errors.Add(logfile.IndexOf("Result: FAIL", errors.Last()+1));
+				}
+				if(errors.Count<=2)
+				{
+					jobs.Add(new BunnyJob(job_names[i], true));
+					continue;
+				}
+				var tests=new List<BunnyTest>(errors.Count-2);
+				for(int j=tests.Capacity-1; j>=0; --j)
+				{
+					logfile=logfile.Substring(0, errors[j+1]);
+					var last_lf=logfile.LastIndexOf("\n");
+					var test_name=logfile.Substring(last_lf, logfile.IndexOf(":", last_lf)-last_lf).Trim();
+					tests.Add(new BunnyTest(test_name, System.IO.File.ReadAllText(jobs_directory+job_names[i]+"/ws/results/logfile-"+test_name+".log", Encoding.UTF8)));
+				}
+				jobs.Add(new BunnyJob(job_names[i], false, tests));
+			}
+			return jobs;
+//			return new List<BunnyJob>(){
+//				new BunnyJob("dotnet-rpm-rhel7-x64-1.0", true),
+//				new BunnyJob("dotnet-rpm-rhel7-x64-1.1", true),
+//				new BunnyJob("dotnet-rpm-rhel7-x64-2.1", false, new List<BunnyTest>(){new BunnyTest("createdump-aspnet", GetExampleLog()), new BunnyTest("bash-completion", "Bash completion is bork and this is the example log.")}),
+//				new BunnyJob("dotnet-rpm-rhel7-x64-2.2", true)
+//			};
 		}
 	}
 }
