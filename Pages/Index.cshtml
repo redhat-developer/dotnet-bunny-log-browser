@@ -14,7 +14,7 @@
                 <div class="list-group text-primary bg-dark" id="list-tests" role="tablist">
                     @foreach( BunnyJob job in currentJobs )
                     {
-                        <a class="list-group-item list-group-item-action text-nowrap" id="index-@job.Name" data-toggle="list" href="#@job.Name" role="tab" aria-controls="@job.Name">@job.DisplayName</a>
+                        <a class="list-group-item list-group-item-action text-nowrap text-@(job.Passed ? "pass" : "fail")" id="index-@job.Name" data-toggle="list" href="#@job.Name" role="tab" aria-controls="@job.Name">@job.DisplayName</a>
                     }
                 </div>
             </div>
@@ -22,7 +22,7 @@
                 <div class="list-group" id="list-results" role="tablist">
                     @foreach( BunnyJob job in currentJobs )
                     {
-                        <span class="list-group-item text-nowrap text-@(job.Passed ? "pass" : "fail")">@(job.Passed ? "PASS" : "FAIL")</span>
+                        <a href="@job.ConsoleURL" class="list-group-item text-nowrap">Console</a>
                     }
                 </div>
             </div>
@@ -55,7 +55,14 @@
                             }
                             else
                             {
-                                <span>No failed tests.</span>
+                                @if( job.Passed )
+                                {
+                                    <span>No failed tests.</span>
+                                }
+                                else
+                                {
+                                    <span>Unable to load log files.</span>
+                                }
                             }
                         </div>
                     }
