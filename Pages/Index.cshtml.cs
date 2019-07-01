@@ -19,7 +19,7 @@ namespace DotnetBunnyLogBrowser.Pages
 			for(int i=0; i<job_names.Length; ++i)
 			{
 				job_names[i]=job_names[i].Substring(job_names[i].LastIndexOf('/')+1);
-				var logfile=client.DownloadString(Path.Combine(JobsConfig.Get().JobsURL, job_names[i], "ws/results/logfile.log"));
+				var logfile=client.DownloadString(JobsConfig.Get().JobsURL+job_names[i]+"ws/results/logfile.log");
 				var errors=new List<int>(){0};
 				while(errors.Last()!=-1)
 				{
@@ -36,7 +36,7 @@ namespace DotnetBunnyLogBrowser.Pages
 					logfile=logfile.Substring(0, errors[j+1]);
 					var last_lf=logfile.LastIndexOf("\n");
 					var test_name=logfile.Substring(last_lf, logfile.IndexOf(":", last_lf)-last_lf).Trim();
-					tests.Add(new BunnyTest(test_name, client.DownloadString(Path.Combine(JobsConfig.Get().JobsURL, job_names[i], "ws/results/logfile-"+test_name+".log"))));
+					tests.Add(new BunnyTest(test_name, client.DownloadString(JobsConfig.Get().JobsURL+job_names[i]+"ws/results/logfile-"+test_name+".log")));
 				}
 				jobs.Add(new BunnyJob(job_names[i], false, tests));
 			}
