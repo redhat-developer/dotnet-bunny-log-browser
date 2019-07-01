@@ -10,7 +10,7 @@
 {
     <div class="main container-fluid">
         <div class="row bg-dark text-left">
-            <div class="col-2">
+            <div class="col-3">
                 <div class="list-group text-primary bg-dark" id="list-tests" role="tablist">
                     @foreach( BunnyJob job in currentJobs )
                     {
@@ -26,7 +26,7 @@
                     }
                 </div>
             </div>
-            <div class="col-9">
+            <div class="col-8">
                 <div class="tab-content bg-dark text-white" id="nav-tabContent">
                     @foreach( BunnyJob job in currentJobs )
                     {
@@ -34,7 +34,7 @@
                             @if( job.FailedTests != null )
                             {
                                 <div class="row">
-                                    <div class="col-xl-2 col-lg-3">
+                                    <div class="col-xl-4 col-lg-4">
                                         Failed tests:
                                         <div class="list-group bg-dark" id="list-failures" role="tablist">
                                             @foreach( BunnyTest test in job.FailedTests )
@@ -43,7 +43,7 @@
                                             }
                                         </div>
                                     </div>
-                                    <div class="col-xl-10 col-lg-9">
+                                    <div class="col-xl-8 col-lg-8">
                                         <div class="tab-content bg-dark text-white" id="list-logs" role="tablist">
                                             @foreach( BunnyTest test in job.FailedTests )
                                             {
