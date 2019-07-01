@@ -14,7 +14,7 @@ namespace DotnetBunnyLogBrowser
         public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
                 .UseKestrel(options => {
-                    options.Listen(IPAddress.Loopback, 5080); //HTTP port
+                    options.Listen(IPAddress.Any, 5080); //HTTP port
                 }).UseStartup<Startup>();
     }
 }
