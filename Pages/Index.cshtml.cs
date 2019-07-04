@@ -9,9 +9,9 @@ namespace DotnetBunnyLogBrowser.Pages
 {
     public class IndexModel : PageModel
     {
-        private static string PathToName(string path, char slash = '/')
+        private static string PathToName(string path)
         {
-            return path.Substring(path.LastIndexOf(slash) + 1);
+            return path.Substring(path.LastIndexOf(Path.DirectorySeparatorChar) + 1);
         }
         private static string[] SubdirectoriesNames(string directory, string pattern = "*")
         {
