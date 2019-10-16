@@ -4,70 +4,60 @@
 @model IndexModel
 @{
     ViewData["Title"] = ".NET Bunny: Log Browser";
+    List<BunnyJob> jobs = Model.GetJobs();
+    ViewData["Jobs"] = jobs;
 }
 
-@using( BunnyJobList currentJobs = new BunnyJobList(Model.GetJobs()) )
-{
-    <div class="main container-fluid">
-        <div class="row bg-dark text-left">
-            <div class="col-3">
-                <div class="list-group text-primary bg-dark" id="list-tests" role="tablist">
-                    @foreach( BunnyJob job in currentJobs )
-                    {
-                        <a class="list-group-item list-group-item-action text-nowrap text-@(job.Passed ? "pass" : "fail")" id="index-@job.Name" data-toggle="list" href="#@job.Name" role="tab" aria-controls="@job.Name">@job.DisplayName</a>
-                    }
-                </div>
+<div class="main container-fluid">
+    <div class="row bg-dark text-left">
+        <div class="col-3">
+            <div class="list-group text-primary bg-dark" id="list-tests" role="tablist">
+                @foreach( BunnyJob job in jobs )
+                {
+                    <a class="list-group-item list-group-item-action text-nowrap text-@(job.Passed ? "pass" : "fail")" id="index-@job.Name" data-toggle="list" href="#@job.Name" role="tab" aria-controls="@job.Name">@job.DisplayName</a>
+                }
             </div>
-            <div class="col-1">
-                <div class="list-group" id="list-results" role="tablist">
-                    @foreach( BunnyJob job in currentJobs )
-                    {
-                        <a href="@job.ConsoleURL" class="list-group-item text-nowrap">Console</a>
-                    }
-                </div>
+        </div>
+        <div class="col-1">
+            <div class="list-group" id="list-results" role="tablist">
+                @foreach( BunnyJob job in jobs )
+                {
+                    <a href="@job.ConsoleURL" class="list-group-item text-nowrap">Console</a>
+                }
             </div>
-            <div class="col-8">
-                <div class="tab-content bg-dark text-white" id="nav-tabContent">
-                    @foreach( BunnyJob job in currentJobs )
-                    {
-                        <div class="tab-pane fade tests" id="@job.Name" role="tabpanel" aria-labelledby="index-@job.Name">
-                            @if( job.FailedTests != null )
-                            {
-                                <div class="row">
-                                    <div class="col-xl-4 col-lg-4">
-                                        Failed tests:
-                                        <div class="list-group bg-dark" id="list-failures" role="tablist">
-                                            @foreach( BunnyTest test in job.FailedTests )
-                                            {
-                                                <a class="list-group-item list-group-item-action text-nowrap" id="index-@test.Name" data-toggle="list" href="#@test.Name" role="tab" aria-controls="@test.Name">@test.DisplayName</a>
-                                            }
-                                        </div>
-                                    </div>
-                                    <div class="col-xl-8 col-lg-8">
-                                        <div class="tab-content bg-dark text-white" id="list-logs" role="tablist">
-                                            @foreach( BunnyTest test in job.FailedTests )
-                                            {
-                                                <div class="tab-pane fade log" id="@test.Name" role="tabpanel" aria-labelledby="index-@test.Name">@test.Log</div>
-                                            }
-                                        </div>
-                                    </div>
+        </div>
+        <div class="col-3">
+            <div class="tab-content bg-dark text-white" id="nav-tabContent">
+                @for( int i=0; i<jobs.Count; ++i )
+                {
+                    <div class="tab-pane fade tests" id="@(jobs[i].Name)" role="tabpanel" aria-labelledby="index-@(jobs[i].Name)">
+                        @if( jobs[i].FailedTests != null )
+                        {
+                            <div class="row">
+                                Failed tests:
+                                <div class="list-group bg-dark" id="list-failures" role="tablist">
+                                    @for( int j=0; j<jobs[i].FailedTests.Count; ++j )
+                                    {
+                                        <a class="list-group-item list-group-item-action text-nowrap" id="index-@(jobs[i].FailedTests[j].Name)" data-toggle="list" href="/?job=@i&test=@j" role="tab">@(jobs[i].FailedTests[j].DisplayName)</a>
+                                    }
                                 </div>
+                            </div>
+                        }
+                        else
+                        {
+                            @if( jobs[i].Passed )
+                            {
+                                <span>No failed tests.</span>
                             }
                             else
                             {
-                                @if( job.Passed )
-                                {
-                                    <span>No failed tests.</span>
-                                }
-                                else
-                                {
-                                    <span>Unable to load log files.</span>
-                                }
+                                <span>Unable to load log files.</span>
                             }
-                        </div>
-                    }
-                </div>
+                        }
+                    </div>
+                }
             </div>
         </div>
+        <partial name="_LogOutput" />
     </div>
-}
+</div>
