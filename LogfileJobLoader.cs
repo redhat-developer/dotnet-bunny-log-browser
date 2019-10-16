@@ -1,9 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.IO;
 using System.Net;
-
 
 namespace DotnetBunnyLogBrowser
 {
@@ -18,7 +16,7 @@ namespace DotnetBunnyLogBrowser
         }
         private static string PathToName(string path)
         {
-            return path.Substring(path.LastIndexOf(Path.DirectorySeparatorChar) + 1);
+            return path.Substring(path.TrimEnd(Path.DirectorySeparatorChar).LastIndexOf(Path.DirectorySeparatorChar) + 1);
         }
         private static string[] SubdirectoriesNames(string directory, string pattern = "*")
         {
@@ -35,10 +33,11 @@ namespace DotnetBunnyLogBrowser
             var jobNames = SubdirectoriesNames(jobsDirectory, jobsPattern);
             var jobs = new List<BunnyJob>(jobNames.Length);
             var client = new WebClient();
+            jobsUrl = jobsUrl.TrimEnd('/') + "/";
 
             for (int i = 0; i < jobNames.Length; ++i)
             {
-                var buildsNames = SubdirectoriesNames(jobsDirectory + jobNames[i] + "/builds");
+                var buildsNames = SubdirectoriesNames(Path.Combine(jobsDirectory, jobNames[i], "builds"));
                 var lastBuild = buildsNames.Select(nameof => ParseOr(nameof, -1)).DefaultIfEmpty(-1).Max();
                 string logfile = "";
                 try
@@ -47,13 +46,13 @@ namespace DotnetBunnyLogBrowser
                 }
                 catch (WebException)
                 {
-                    jobs.Add(new BunnyJob(jobNames[i], lastBuild == -1 ? "" : jobsUrl + jobNames[i] + "/" + lastBuild + "/console", false));
+                    jobs.Add(new BunnyJob(jobNames[i], lastBuild == -1 ? "" : jobsUrl + jobNames[i] + "/" + lastBuild + "/consoleFull", false));
                     continue;
                 }
                 var errors = logfile.Split("Result: FAIL");
                 if (errors.Length <= 1)
                 {
-                    jobs.Add(new BunnyJob(jobNames[i], lastBuild == -1 ? "" : jobsUrl + jobNames[i] + "/" + lastBuild + "/console", true));
+                    jobs.Add(new BunnyJob(jobNames[i], lastBuild == -1 ? "" : jobsUrl + jobNames[i] + "/" + lastBuild + "/consoleFull", true));
                     continue;
                 }
                 var tests = new List<BunnyTest>(errors.Length - 1);
@@ -70,7 +69,7 @@ namespace DotnetBunnyLogBrowser
                         tests.Add(new BunnyTest(testName, ""));
                     }
                 }
-                jobs.Add(new BunnyJob(jobNames[i], lastBuild == -1 ? "" : jobsUrl + jobNames[i] + "/" + lastBuild + "/console", false, tests));
+                jobs.Add(new BunnyJob(jobNames[i], lastBuild == -1 ? "" : jobsUrl + jobNames[i] + "/" + lastBuild + "/consoleFull", false, tests));
             }
             return jobs;
         }
