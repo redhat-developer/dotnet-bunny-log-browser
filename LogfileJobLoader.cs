@@ -12,7 +12,7 @@ namespace DotnetBunnyLogBrowser
         {
             this.jobsDirectory = jobsDirectory;
             this.jobsPattern = jobsPattern;
-            this.jobsUrl = jobsUrl;
+            this.jobsUrl = jobsUrl.TrimEnd('/') + "/";
         }
         private static string PathToName(string path)
         {
@@ -33,7 +33,6 @@ namespace DotnetBunnyLogBrowser
             var jobNames = SubdirectoriesNames(jobsDirectory, jobsPattern);
             var jobs = new List<BunnyJob>(jobNames.Length);
             var client = new WebClient();
-            jobsUrl = jobsUrl.TrimEnd('/') + "/";
 
             for (int i = 0; i < jobNames.Length; ++i)
             {

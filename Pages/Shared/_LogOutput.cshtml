@@ -1,0 +1,22 @@
+@using DotnetBunnyLogBrowser
+@using DotnetBunnyLogBrowser.Pages
+@model IndexModel
+
+@{
+    List<BunnyJob> jobs = ViewData["Jobs"] as List<BunnyJob>;
+    int? job = (int?)ViewData["SelectedJob"];
+    int? test = (int?)ViewData["SelectedTest"];
+}
+@if (job.HasValue && test.HasValue)
+{
+    <div class="col-5">
+        <div class="tab-content bg-dark text-white" id="nav-tabContent">
+            <div class="row">
+                <div class="tab-content bg-dark text-white" id="list-logs" role="tablist">
+                    <div class="tab-pane fade log" role="tabpanel">@(jobs[job.Value].FailedTests[test.Value].Log)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
