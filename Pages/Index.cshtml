@@ -3,61 +3,68 @@
 @using DotnetBunnyLogBrowser.Pages
 @model IndexModel
 @{
-    ViewData["Title"] = ".NET Bunny: Log Browser";
     List<BunnyJob> jobs = Model.GetJobs();
-    ViewData["Jobs"] = jobs;
+    var param_url=Model.UrlParameters();
+    int? job=param_url[0], test=param_url[1];
+    ViewData["Title"] = ".NET Bunny: Log Browser";
 }
 
 <div class="main container-fluid">
     <div class="row bg-dark text-left">
         <div class="col-3">
-            <div class="list-group text-primary bg-dark" id="list-tests" role="tablist">
-                @foreach( BunnyJob job in jobs )
+            <div class="list-group text-primary bg-dark" id="list-tests">
+                @for( int i=0; i<jobs.Count; ++i )
                 {
-                    <a class="list-group-item list-group-item-action text-nowrap text-@(job.Passed ? "pass" : "fail")" id="index-@job.Name" data-toggle="list" href="#@job.Name" role="tab" aria-controls="@job.Name">@job.DisplayName</a>
+                    <a class="list-group-item list-group-item-action text-nowrap text-@(jobs[i].Passed ? "pass" : "fail")" href="/?job=@i">@(jobs[i].DisplayName)</a>
                 }
             </div>
         </div>
         <div class="col-1">
-            <div class="list-group" id="list-results" role="tablist">
-                @foreach( BunnyJob job in jobs )
+            <div class="list-group" id="list-results">
+                @for( int i=0; i<jobs.Count; ++i )
                 {
-                    <a href="@job.ConsoleURL" class="list-group-item text-nowrap">Console</a>
+                    <a href="@(jobs[i].ConsoleURL)" class="list-group-item text-nowrap">Console</a>
                 }
             </div>
         </div>
         <div class="col-3">
             <div class="tab-content bg-dark text-white" id="nav-tabContent">
-                @for( int i=0; i<jobs.Count; ++i )
+                @if(job.HasValue)
                 {
-                    <div class="tab-pane fade tests" id="@(jobs[i].Name)" role="tabpanel" aria-labelledby="index-@(jobs[i].Name)">
-                        @if( jobs[i].FailedTests != null )
+                    <div class="tests" id="tests">
+                        @if( jobs[job.Value].FailedTests != null )
                         {
-                            <div class="row">
-                                Failed tests:
-                                <div class="list-group bg-dark" id="list-failures" role="tablist">
-                                    @for( int j=0; j<jobs[i].FailedTests.Count; ++j )
-                                    {
-                                        <a class="list-group-item list-group-item-action text-nowrap" id="index-@(jobs[i].FailedTests[j].Name)" data-toggle="list" href="/?job=@i&test=@j" role="tab">@(jobs[i].FailedTests[j].DisplayName)</a>
-                                    }
-                                </div>
+                            <span>Failed tests:</span><br/>
+                            <div class="list-group bg-dark">
+                                @for( int i=0; i<jobs[job.Value].FailedTests.Count; ++i )
+                                {
+                                    <a class="list-group-item list-group-item-action text-nowrap" id="index-@(jobs[job.Value].FailedTests[i].Name)" href="/?job=@(job.Value)&test=@i">@(jobs[job.Value].FailedTests[i].DisplayName)</a>
+                                }
                             </div>
+                        }
+                        else if( jobs[job.Value].Passed )
+                        {
+                            <span>No failed tests.</span>
                         }
                         else
                         {
-                            @if( jobs[i].Passed )
-                            {
-                                <span>No failed tests.</span>
-                            }
-                            else
-                            {
-                                <span>Unable to load log files.</span>
-                            }
+                            <span>Unable to load log files.</span>
                         }
                     </div>
                 }
             </div>
         </div>
-        <partial name="_LogOutput" />
+        @if (job.HasValue && test.HasValue)
+        {
+            <div class="col-5">
+                <div class="tab-content bg-dark text-white" id="nav-tabContent">
+                    <div class="row">
+                        <div class="tab-content bg-dark text-white" id="list-logs">
+                            <div class="log">@(jobs[job.Value].FailedTests[test.Value].Log)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
     </div>
 </div>
