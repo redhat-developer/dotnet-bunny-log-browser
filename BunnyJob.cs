@@ -22,23 +22,4 @@ namespace DotnetBunnyLogBrowser
 		}
 
 	}
-
-	public class BunnyJobList : IDisposable, IEnumerable
-	{
-		private List<BunnyJob> List;
-
-		public BunnyJobList(List<BunnyJob> list)
-		{
-			this.List = list;
-		}
-
-		public void Dispose()
-		{
-		}
-
-		public IEnumerator GetEnumerator()
-		{
-			return this.List.GetEnumerator();
-		}
-	}
 }

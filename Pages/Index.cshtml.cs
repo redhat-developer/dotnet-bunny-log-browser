@@ -29,7 +29,7 @@ namespace DotnetBunnyLogBrowser.Pages
         }
         public List<BunnyJob> GetJobs()
         {
-			return new LogfileJobLoader(JobsConfig.Get().JobsDirectory, JobsConfig.Get().JobsPrefix + "*", JobsConfig.Get().JobsURL).GetJobs();
+			return new JobLoader(JobsConfig.Get().JobsDirectory, JobsConfig.Get().JobsPrefix + "*", JobsConfig.Get().JobsURL).GetJobs();
         }
     }
 }
