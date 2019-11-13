@@ -5,6 +5,8 @@ config.json
 config.json-*
 bin/
 obj/
+TestData/*
+TestDataHydra/*
 
 ## Laravel
 storage/framework/
