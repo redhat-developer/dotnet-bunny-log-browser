@@ -9,79 +9,68 @@ namespace DotnetBunnyLogBrowser
 {
     public class JobLoader
     {
-        private string jobsDirectory, jobsPattern, jobsUrl;
+        private JobPaths paths;
         private WebClient client;
         public JobLoader(string jobsDirectory, string jobsPattern, string jobsUrl)
         {
-            this.jobsDirectory = jobsDirectory;
-            this.jobsPattern = jobsPattern;
-            this.jobsUrl = jobsUrl.TrimEnd('/') + "/";
+            paths = new JobPaths(jobsDirectory, jobsPattern, jobsUrl);
             client = new WebClient();
-        }
-        private static string PathToName(string path)
-        {
-            return path.Substring(path.TrimEnd(Path.DirectorySeparatorChar).LastIndexOf(Path.DirectorySeparatorChar) + 1);
-        }
-        private static string[] SubdirectoriesNames(string directory, string pattern = "*")
-        {
-            return Directory.GetDirectories(directory, pattern).Select(subdir => PathToName(subdir)).ToArray();
-        }
-        private static int ParseOr(string s, int defaultValue)
-        {
-            int num;
-            bool ok = int.TryParse(s, out num);
-            return ok ? num : defaultValue;
         }
         private BunnyJob LoadJobLogfile(string jobName)
         {
-            var buildsNames = SubdirectoriesNames(Path.Combine(jobsDirectory, jobName, "builds"));
-            var lastBuild = buildsNames.Select(nameof => ParseOr(nameof, -1)).DefaultIfEmpty(-1).Max();
+            int lastBuild = paths.LastBuildNumber(jobName);
             string logfile = "";
             try
             {
-                logfile = client.DownloadString(jobsUrl + jobName + "/ws/results/logfile.log");
+                logfile = client.DownloadString(paths.JobLogfileUrl(jobName));
             }
             catch (WebException)
             {
-                return new BunnyJob(jobName, lastBuild == -1 ? "" : jobsUrl + jobName + "/" + lastBuild + "/consoleFull", false);
+                return new BunnyJob(jobName, lastBuild == -1 ? "" : paths.ConsoleUrl(jobName, lastBuild), false);
             }
             var errors = logfile.Split("Result: FAIL");
             if (errors.Length <= 1)
             {
-                return new BunnyJob(jobName, lastBuild == -1 ? "" : jobsUrl + jobName + "/" + lastBuild + "/consoleFull", true);
+                return new BunnyJob(jobName, lastBuild == -1 ? "" : paths.ConsoleUrl(jobName, lastBuild), true);
             }
             var tests = new List<BunnyTest>(errors.Length - 1);
-            for (int j = 0; j < tests.Capacity; ++j)
+            for (int i = 0; i < tests.Capacity; ++i)
             {
-                var lastLF = errors[j].LastIndexOf('\n');
-                var testName = errors[j].Substring(lastLF, errors[j].IndexOf(':', lastLF) - lastLF).Trim();
+                var lastLF = errors[i].LastIndexOf('\n');
+                var testName = errors[i].Substring(lastLF, errors[i].IndexOf(':', lastLF) - lastLF).Trim();
                 try
                 {
-                    tests.Add(new BunnyTest(testName, client.DownloadString(jobsUrl + jobName + "/ws/results/logfile-" + testName + ".log")));
+                    tests.Add(new BunnyTest(testName, client.DownloadString(paths.TestLogfileUrl(jobName, testName))));
                 }
                 catch (WebException)
                 {
                     tests.Add(new BunnyTest(testName, ""));
                 }
             }
-            return new BunnyJob(jobName, lastBuild == -1 ? "" : jobsUrl + jobName + "/" + lastBuild + "/consoleFull", false, tests);
+            return new BunnyJob(jobName, lastBuild == -1 ? "" : paths.ConsoleUrl(jobName, lastBuild), false, tests);
         }
         private BunnyJob LoadJobJson(string jobName)
         {
-            var buildsNames = SubdirectoriesNames(Path.Combine(jobsDirectory, jobName, "builds"));
-            var lastBuild = buildsNames.Select(nameof => ParseOr(nameof, -1)).DefaultIfEmpty(-1).Max();
+            int lastBuild = paths.LastBuildNumber(jobName);
+            string name = jobName;
+            bool success = false;
             JsonDocument json;
-            XDocument xml;
             try
             {
-                json = JsonDocument.Parse(client.DownloadString(jobsUrl + jobName + "/" + lastBuild + "/jtreg-report.json"));
-                xml = XDocument.Parse(client.DownloadString(jobsUrl + jobName + "/" + lastBuild + "/build.xml"));
+                string xml_text=client.DownloadString(paths.XmlUrl(jobName, lastBuild));
+                XElement xml = XElement.Parse(xml_text.Substring(xml_text.IndexOf('>')+1));
+                name = xml.DescendantsAndSelf("displayName").First().Value;
+                success = (xml.DescendantsAndSelf("result").First().Value == "SUCCESS");
+            }
+            catch {}
+            try
+            {
+                json = JsonDocument.Parse(client.DownloadString(paths.JsonUrl(jobName, lastBuild)));
             }
             catch (WebException)
             {
-                return new BunnyJob(jobName, "", false);
+                return new BunnyJob(name, "", success);
             }
-            string name = xml.Root.GetDescendantsAndSelf("displayName").DefaultIfEmpty(jobName).First();
             var root = json.RootElement[0].GetProperty("report");
             if (root.GetProperty("testsPassed").GetInt32() == root.GetProperty("testsTotal").GetInt32())
             {
@@ -93,19 +82,19 @@ namespace DotnetBunnyLogBrowser
                 string log = "";
                 foreach (var output in problem.GetProperty("outputs").EnumerateArray())
                 {
-                    log += output.GetProperty("name").GetString() + ":\n" + output.GetProperty("value").GetString();
+                    log += output.GetProperty("name").GetString() + " - " + output.GetProperty("value").GetString();
                 }
                 tests.Add(new BunnyTest(problem.GetProperty("name").GetString(), log));
             }
             return new BunnyJob(name, "", false, tests);
         }
-        public List<BunnyJob> GetJobs()
+        public List<BunnyJob> GetJobs(bool use_json)
         {
-            var jobNames = SubdirectoriesNames(jobsDirectory, jobsPattern);
+            var jobNames = paths.JobNames;
             var jobs = new List<BunnyJob>(jobNames.Length);
-            for (int i = 0; i < jobNames.Length; ++i)
+            foreach (var jobName in jobNames)
             {
-                jobs.Add(LoadJobLogfile(jobNames[i]));
+                jobs.Add(use_json ? LoadJobJson(jobName) : LoadJobLogfile(jobName));
             }
             return jobs;
         }
