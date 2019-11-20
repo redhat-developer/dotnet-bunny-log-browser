@@ -10,26 +10,26 @@ namespace DotnetBunnyLogBrowser.Pages
 {
     public class IndexModel : PageModel
     {
-        public int?[] UrlParameters()
+        public int[] UrlParameters()
         {
-            int? job=null, test=null;
+            int job=-1, test=-1;
             if(Request!=null && Request.QueryString!=null && Request.QueryString.HasValue)
             {
                 string[] query=Request.QueryString.ToString().Substring(1).Split('&');
                 if(query.Length>=1&&query[0].StartsWith("job="))
                 {
-                    job=int.Parse(query[0].Substring(4));
+                    int.TryParse(query[0].Substring(4), out job);
                 }
                 if(query.Length>=2&&query[1].StartsWith("test="))
                 {
-                    test=int.Parse(query[1].Substring(5));
+                    int.TryParse(query[1].Substring(5), out test);
                 }
             }
-            return new int?[2] {job, test};
+            return new int[2] {job, test};
         }
         public List<BunnyJob> GetJobs()
         {
-			return new JobLoader(JobsConfig.Get().JobsDirectory, JobsConfig.Get().JobsPrefix + "*", JobsConfig.Get().JobsURL).GetJobs();
+			return new JobLoader(JobsConfig.Get().JobsDirectory, JobsConfig.Get().JobsPattern, JobsConfig.Get().JobsURL).GetJobs(JobsConfig.Get().UseJson);
         }
     }
 }
