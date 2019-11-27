@@ -3,9 +3,9 @@
 @using DotnetBunnyLogBrowser.Pages
 @model IndexModel
 @{
-    List<BunnyJob> jobs = Model.GetJobs();
     var param_url=Model.UrlParameters();
     int job=param_url[0], test=param_url[1];
+    var jobs = Model.GetJobs(job, test);
     if((job >= 0 && job >= jobs.Count) || (test >= 0 && test >= jobs[job].FailedTests.Count))
     {
         job = test = -1;

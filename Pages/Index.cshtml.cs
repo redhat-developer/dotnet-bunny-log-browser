@@ -27,9 +27,9 @@ namespace DotnetBunnyLogBrowser.Pages
             }
             return new int[2] {job, test};
         }
-        public List<BunnyJob> GetJobs()
+        public List<BunnyJob> GetJobs(int job, int test)
         {
-			return new JobLoader(JobsConfig.Get().JobsDirectory, JobsConfig.Get().JobsPattern, JobsConfig.Get().JobsURL).GetJobs(JobsConfig.Get().UseJson);
+			return new JobLoader(JobsConfig.Get().JobsDirectory, JobsConfig.Get().JobsPattern, JobsConfig.Get().JobsURL).GetJobs(job, test, JobsConfig.Get().UseJson);
         }
     }
 }
