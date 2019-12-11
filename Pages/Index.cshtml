@@ -3,72 +3,52 @@
 @using DotnetBunnyLogBrowser.Pages
 @model IndexModel
 @{
-    var param_url=Model.UrlParameters();
-    int job=param_url[0], test=param_url[1];
+    var param_url = Model.UrlParameters();
+    int job = param_url[0], test=param_url[1];
     var jobs = Model.GetJobs(job, test);
-    if((job >= 0 && job >= jobs.Count) || (test >= 0 && test >= jobs[job].FailedTests.Count))
-    {
-        job = test = -1;
-    }
+    job = (job >= jobs.Length ? -1 : job);
+    test = (job < 0 || jobs[job].FailedTests == null || test >= jobs[job].FailedTests.Length ? -1 : test);
     ViewData["Title"] = ".NET Bunny: Log Browser";
 }
 
-<div class="main container-fluid bg-dark">
-    <div class="row text-left">
-        <div class="col-3">
-            <div class="list-group text-primary">
-                @for( int i=0; i<jobs.Count; ++i )
-                {
-                    <a class="list-group-item list-group-item-action text-nowrap text-@(jobs[i].Passed ? "pass" : "fail")" href="/?job=@i">@(jobs[i].DisplayName)</a>
-                }
-            </div>
-        </div>
-        <div class="col-1">
-            <div class="list-group">
-                @for( int i=0; i<jobs.Count; ++i )
-                {
-                    <a href="@(jobs[i].ConsoleURL)" class="list-group-item text-nowrap">Console</a>
-                }
-            </div>
-        </div>
-        <div class="col-3">
-            <div class="tab-content text-white">
-                @if( job >= 0 )
-                {
-                    <div class="tests">
-                        @if( jobs[job].FailedTests != null )
-                        {
-                            <span>Failed tests:</span><br/>
-                            <div class="list-group">
-                                @for( int i=0; i<jobs[job].FailedTests.Count; ++i )
-                                {
-                                    <a class="list-group-item list-group-item-action text-nowrap" href="/?job=@(job)&test=@i">@(jobs[job].FailedTests[i].DisplayName)</a>
-                                }
-                            </div>
-                        }
-                        else if( jobs[job].Passed )
-                        {
-                            <span>No failed tests.</span>
-                        }
-                        else
-                        {
-                            <span>Unable to load log files.</span>
-                        }
-                    </div>
-                }
-            </div>
-        </div>
-        @if( job >= 0 && test >= 0 )
+<div class="main container-fluid bg-dark row text-left">
+    <div class="col-3 list-group text-primary">
+        @for( int i=0; i<jobs.Length; ++i )
         {
-            <div class="col-5">
-                <div class="tab-content text-white">
-                    <div class="row">
-                        <div class="tab-content">
-                            <div class="log">@(jobs[job].FailedTests[test].Log)</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <a class="list-group-item list-group-item-action text-nowrap text-@(jobs[i].Passed ? "pass" : "fail")" href="/?job=@i">@(jobs[i].DisplayName)</a>
         }
     </div>
+    <div class="col-1 list-group">
+        @for( int i=0; i<jobs.Length; ++i )
+        {
+            <a href="@(jobs[i].ConsoleURL)" class="list-group-item text-nowrap">Console</a>
+        }
+    </div>
+    <div class="col-3 tab-content text-white tests">
+        @if( job >= 0 )
+        {
+            @if( jobs[job].FailedTests != null )
+            {
+                <span>Failed tests:</span><br/>
+                <div class="list-group">
+                    @for( int i=0; i<jobs[job].FailedTests.Length; ++i )
+                    {
+                        <a class="list-group-item list-group-item-action text-nowrap" href="/?job=@(job)&test=@i">@(jobs[job].FailedTests[i].DisplayName)</a>
+                    }
+                </div>
+            }
+            else if( jobs[job].Passed )
+            {
+                <span>No failed tests.</span>
+            }
+            else
+            {
+                <span>Unable to load log files.</span>
+            }
+        }
+    </div>
+    @if( job >= 0 && test >= 0 )
+    {
+        <div class="col-5 tab-content text-white row tab-content log">@(jobs[job].FailedTests[test].Log)</div>
+    }
 </div>

@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Linq;
-using System.IO;
 using System.Net;
 using System.Text.Json;
 using System.Xml.Linq;
@@ -16,9 +15,8 @@ namespace DotnetBunnyLogBrowser
             paths = new JobPaths(jobsDirectory, jobsPattern, jobsUrl);
             client = new WebClient();
         }
-        private BunnyJob LoadJobLogfile(string jobName, bool showTests, int test)
+        private BunnyJob LoadJobLogfile(string jobName, bool showTests, int test, int lastBuild)
         {
-            int lastBuild = paths.LastBuildNumber(jobName);
             string[] errors;
             try
             {
@@ -36,12 +34,12 @@ namespace DotnetBunnyLogBrowser
             {
                 return new BunnyJob(jobName, lastBuild == -1 ? "" : paths.ConsoleUrl(jobName, lastBuild), false);
             }
-            var tests = new List<BunnyTest>(errors.Length - 1);
-            for (int i = 0; i < tests.Capacity; ++i)
+            var tests = new BunnyTest[errors.Length - 1];
+            for (int i = 0; i < tests.Length; ++i)
             {
                 var lastLF = errors[i].LastIndexOf('\n');
                 var testName = errors[i].Substring(lastLF, errors[i].IndexOf(':', lastLF) - lastLF).Trim();
-                tests.Add(new BunnyTest(testName, ""));
+                tests[i] = new BunnyTest(testName, "");
             }
             if (test >= 0)
             {
@@ -53,38 +51,41 @@ namespace DotnetBunnyLogBrowser
             }
             return new BunnyJob(jobName, lastBuild == -1 ? "" : paths.ConsoleUrl(jobName, lastBuild), false, tests);
         }
-        private BunnyJob LoadJobJson(string jobName, bool showTests, int test)
+        static private (string name, bool success) ParseXml(string xml)
         {
-            int lastBuild = paths.LastBuildNumber(jobName);
-            string name = jobName;
-            bool success = false;
-            JsonDocument json;
+            XElement el = XElement.Parse(xml.Substring(xml.IndexOf('>')+1));
+            return (el.DescendantsAndSelf("displayName").First().Value, el.DescendantsAndSelf("result").First().Value == "SUCCESS");
+        }
+        private (BunnyJob, bool) LoadJobJson(string jobName, bool showTests, int test, int lastBuild)
+        {
+            (string name, bool success) xmlvalue;
             try
             {
-                string xml_text=client.DownloadString(paths.XmlUrl(jobName, lastBuild));
-                XElement xml = XElement.Parse(xml_text.Substring(xml_text.IndexOf('>')+1));
-                name = xml.DescendantsAndSelf("displayName").First().Value;
-                success = (xml.DescendantsAndSelf("result").First().Value == "SUCCESS");
+                xmlvalue = ParseXml(client.DownloadString(paths.XmlUrl(jobName, lastBuild)));
             }
-            catch {}
+            catch
+            {
+                xmlvalue = (jobName, false);
+            }
+            JsonDocument json;
             try
             {
                 json = JsonDocument.Parse(client.DownloadString(paths.JsonUrl(jobName, lastBuild)));
             }
             catch (WebException)
             {
-                return new BunnyJob(name, "", success);
+                return (new BunnyJob(xmlvalue.name, "", xmlvalue.success), true);
             }
             var root = json.RootElement[0].GetProperty("report");
             if (root.GetProperty("testsPassed").GetInt32() == root.GetProperty("testsTotal").GetInt32())
             {
-                return new BunnyJob(name, "", true);
+                return (new BunnyJob(xmlvalue.name, "", true), false);
             }
             if (!showTests)
             {
-                return new BunnyJob(name, "", false);
+                return (new BunnyJob(xmlvalue.name, "", false), false);
             }
-            var tests = new List<BunnyTest>(root.GetProperty("testProblems").GetArrayLength());
+            var tests = new BunnyTest[root.GetProperty("testProblems").GetArrayLength()];
             int i = 0;
             foreach (var problem in root.GetProperty("testProblems").EnumerateArray())
             {
@@ -96,18 +97,27 @@ namespace DotnetBunnyLogBrowser
                         log += output.GetProperty("name").GetString() + " - " + output.GetProperty("value").GetString();
                     }
                 }
-                tests.Add(new BunnyTest(problem.GetProperty("name").GetString(), log));
+                tests[i] = new BunnyTest(problem.GetProperty("name").GetString(), log);
                 ++i;
             }
-            return new BunnyJob(name, "", false, tests);
+            return (new BunnyJob(xmlvalue.name, "", false, tests), false);
         }
-        public List<BunnyJob> GetJobs(int job, int test, bool use_json)
+        public BunnyJob[] GetJobs(int job, int test, bool useJson)
         {
             var names = paths.JobNames;
-            var jobs = new List<BunnyJob>(names.Length);
+            var jobs = new BunnyJob[names.Length];
             for (int i = 0; i < names.Length; ++i)
             {
-                jobs.Add(use_json ? LoadJobJson(names[i], i == job, test) : LoadJobLogfile(names[i], job==i, test));
+                int lastBuild = paths.LastBuildNumber(names[i]);
+                bool useLogfile = true;
+                if (useJson)
+                {
+                    (jobs[i], useLogfile) = LoadJobJson(names[i], job == i, test, lastBuild);
+                }
+                if (useLogfile)
+                {
+                    jobs[i] = LoadJobLogfile(names[i], job==i, test, lastBuild);
+                }
             }
             return jobs;
         }
