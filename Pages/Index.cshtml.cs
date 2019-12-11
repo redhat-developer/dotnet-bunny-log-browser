@@ -1,9 +1,5 @@
-﻿using System.Web;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Net.Http;
-using Microsoft.AspNetCore;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.Abstractions;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace DotnetBunnyLogBrowser.Pages
@@ -16,7 +12,7 @@ namespace DotnetBunnyLogBrowser.Pages
             if(Request!=null && Request.QueryString!=null && Request.QueryString.HasValue)
             {
                 string[] query=Request.QueryString.ToString().Substring(1).Split('&');
-                if(query.Length>=1&&query[0].StartsWith("job="))
+                if(query.Length >=1 && query[0].StartsWith("job="))
                 {
                     int.TryParse(query[0].Substring(4), out job);
                 }
@@ -27,7 +23,7 @@ namespace DotnetBunnyLogBrowser.Pages
             }
             return new int[2] {job, test};
         }
-        public List<BunnyJob> GetJobs(int job, int test)
+        public BunnyJob[] GetJobs(int job, int test)
         {
 			return new JobLoader(JobsConfig.Get().JobsDirectory, JobsConfig.Get().JobsPattern, JobsConfig.Get().JobsURL).GetJobs(job, test, JobsConfig.Get().UseJson);
         }

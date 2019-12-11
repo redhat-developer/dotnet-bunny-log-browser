@@ -10,9 +10,9 @@ namespace DotnetBunnyLogBrowser
 		public string Name;
 		public string ConsoleURL;
 		public bool Passed;
-		public List<BunnyTest> FailedTests;
+		public BunnyTest[] FailedTests;
 
-		public BunnyJob(string name, string consoleUrl, bool passed, List<BunnyTest> failedTests = null)
+		public BunnyJob(string name, string consoleUrl, bool passed, BunnyTest[] failedTests = null)
 		{
 			this.DisplayName = name;
 			this.Name = name.Replace('.','-');
